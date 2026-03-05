@@ -4,9 +4,9 @@ use crate::constants::SCREEN_HEIGHT;
 use crate::player::Player;
 
 pub struct Obstacle {
-    pub x: i32,      // Position in *world-space*
-    pub gap_y: i32,  // Position of the center of the gap
-    pub size: i32,   // The length of the gap
+    pub x: i32,     // Position in *world-space*
+    pub gap_y: i32, // Position of the center of the gap
+    pub size: i32,  // The length of the gap
 }
 
 impl Obstacle {
@@ -15,7 +15,7 @@ impl Obstacle {
         Obstacle {
             x,
             gap_y: random.range(10, 40),
-            size: i32::max(2, 20 - score)
+            size: i32::max(2, 20 - score),
         }
     }
 
@@ -29,7 +29,7 @@ impl Obstacle {
     }
 
     pub fn render(&mut self, ctx: &mut BTerm, player_x: i32) {
-        let screen_x = self.x - player_x;   // This obstacle's x coordinate in screen space
+        let screen_x = self.x - player_x; // This obstacle's x coordinate in screen space
         let (lower_bound, upper_bound) = self.get_bounds();
 
         // Render the top half of the obstacle

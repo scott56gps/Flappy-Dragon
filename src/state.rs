@@ -1,12 +1,15 @@
 use bracket_lib::prelude::*;
 
-use crate::constants::{SCREEN_HEIGHT, FRAME_DURATION};
+use crate::constants::{FRAME_DURATION, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::obstacle::Obstacle;
 use crate::player::Player;
 
 pub struct State {
     pub player: Player,
-    pub frame_time: f32,  // I believe this means the current time inside of the current frame
+    pub frame_time: f32, // I believe this means the current time inside of the current frame
+    pub obstacle: Obstacle,
     pub mode: GameMode,
+    pub score: i32,
 }
 
 impl State {
@@ -14,23 +17,52 @@ impl State {
         State {
             player: Player::new(5, 25),
             frame_time: 0.0,
+            obstacle: Obstacle::new(SCREEN_WIDTH, 0),
             mode: GameMode::Menu,
+            score: 0,
         }
+    }
+
+    fn print_header(&self, ctx: &mut BTerm) {
+        ctx.print(0, 0, "Press SPACE to flap.");
+        ctx.print(0, 1, &format!("Score: {}", self.score));
+    }
+
+    fn player_did_pass_obstacle(&self) -> bool {
+        self.player.x > self.obstacle.x
+    }
+
+    fn player_did_hit_floor(&self) -> bool {
+        self.player.y > SCREEN_HEIGHT
     }
 
     pub fn play(&mut self, ctx: &mut BTerm) {
         ctx.cls_bg(NAVY);
-        self.frame_time += ctx.frame_time_ms;  // Increment the current time inside of the current frame
-        if self.frame_time > FRAME_DURATION {  // NOW that the frame is complete, run the actual simulation.  Computer is faster than human.
+
+        // Frame detection
+        self.frame_time += ctx.frame_time_ms; // Increment the current time inside of the current frame
+        if self.frame_time > FRAME_DURATION {
+            // NOW that the frame is complete, run the actual simulation.  Computer is faster than human.
             self.frame_time = 0.0;
             self.player.gravity_and_move();
         }
+
+        // Input detection
+        self.print_header(ctx);
         if let Some(VirtualKeyCode::Space) = ctx.key {
             self.player.flap();
         }
+
+        // Render
         self.player.render(ctx);
-        ctx.print(0, 0, "Press SPACE to flap.");
-        if self.player.y > SCREEN_HEIGHT {    // We've hit the bottom (top of screen is 0)
+        self.obstacle.render(ctx, self.player.x);
+
+        // Enforce Rules
+        if self.player_did_pass_obstacle() {
+            self.score += 1;
+            self.obstacle = Obstacle::new(self.player.x + SCREEN_WIDTH, self.score);
+        }
+        if self.player_did_hit_floor() || self.obstacle.is_hit(&self.player) {
             self.mode = GameMode::End;
         }
     }
@@ -38,12 +70,29 @@ impl State {
     pub fn restart(&mut self) {
         self.player = Player::new(5, 25);
         self.frame_time = 0.0;
+        self.obstacle = Obstacle::new(SCREEN_WIDTH, 0);
         self.mode = GameMode::Playing;
+        self.score = 0;
     }
 
     pub fn main_menu(&mut self, ctx: &mut BTerm) {
         ctx.cls();
-        ctx.print_color_centered(5, RGBA { r: 0.44, g: 0.26, b: 0.78, a: 1.0 }, RGBA { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }, "Welcome to Flappy Dragon!");
+        ctx.print_color_centered(
+            5,
+            RGBA {
+                r: 0.44,
+                g: 0.26,
+                b: 0.78,
+                a: 1.0,
+            },
+            RGBA {
+                r: 0.0,
+                g: 0.0,
+                b: 0.0,
+                a: 1.0,
+            },
+            "Welcome to Flappy Dragon!",
+        );
         ctx.print_centered(8, "(P) Play Game");
         ctx.print_centered(9, "(Q) Quit Game");
 
@@ -59,7 +108,45 @@ impl State {
 
     pub fn dead(&mut self, ctx: &mut BTerm) {
         ctx.cls();
-        ctx.print_color_centered(5, RGBA { r: 1.0, g: 0.0, b: 0.0, a: 1.0 }, RGBA { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }, "You're dead!");
+        ctx.print_color_centered(
+            5,
+            RGBA {
+                r: 1.0,
+                g: 0.0,
+                b: 0.0,
+                a: 1.0,
+            },
+            RGBA {
+                r: 0.0,
+                g: 0.0,
+                b: 0.0,
+                a: 1.0,
+            },
+            "You're dead!",
+        );
+        ctx.print_color_centered(
+            6,
+            RGBA {
+                r: 0.92,
+                g: 1.0,
+                b: 0.0,
+                a: 1.0,
+            },
+            RGBA {
+                r: 0.0,
+                g: 0.0,
+                b: 0.0,
+                a: 1.0,
+            },
+            &format!(
+                "You earned {} {}",
+                self.score,
+                match self.score == 1 {
+                    true => "point",
+                    false => "points",
+                }
+            ),
+        );
         ctx.print_centered(8, "(P) Play Again");
         ctx.print_centered(9, "(Q) Quit Game");
 
@@ -83,7 +170,6 @@ impl GameState for State {
         }
     }
 }
-
 
 pub enum GameMode {
     Menu,

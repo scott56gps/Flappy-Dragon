@@ -9,7 +9,9 @@ pub struct Player {
 impl Player {
     pub fn new(x: i32, y: i32) -> Self {
         Player {
-            x, y, velocity: 0.0,
+            x,
+            y,
+            velocity: 0.0,
         }
     }
 
@@ -18,17 +20,17 @@ impl Player {
     }
 
     pub fn gravity_and_move(&mut self) {
-        if self.velocity < 2.0 {
-            self.velocity += 0.2;        // POSITIVE means down, because the TOP of the screen is 0
+        if self.velocity < 1.8 {
+            self.velocity += 0.4; // POSITIVE means down, because the TOP of the screen is 0
         }
-        self.y += self.velocity as i32;  // Here, we apply the new velocity to the actual position
-        self.x += 1;                     // We always advance the player forward in *world-space*
+        self.y += self.velocity as i32; // Here, we apply the new velocity to the actual position
+        self.x += 1; // We always advance the player forward in *world-space*
         if self.y < 0 {
-            self.y = 0;                  // If we're at the top, keep us at the top
+            self.y = 0; // If we're at the top, keep us at the top
         }
     }
 
     pub fn flap(&mut self) {
-        self.velocity = -2.0;            // Negative means up
+        self.velocity = -2.1; // Negative means up
     }
 }

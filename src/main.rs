@@ -1,9 +1,9 @@
 use bracket_lib::prelude::*;
 
+mod constants;
+mod obstacle;
 mod player;
 mod state;
-mod obstacle;
-mod constants;
 use state::State;
 
 fn main() -> BError {
